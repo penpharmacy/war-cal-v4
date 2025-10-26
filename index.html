@@ -1,59 +1,591 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>คำนวณขนาดยา Warfarin</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>เครื่องคำนวณการให้ยา Warfarin ห้องยาโรงพยาบาลพุนพิน</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+/* --- COPY PROTECTION STYLES --- */
+body {
+    user-select: none; /* Standard syntax */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE/Edge */
+    /* Other styles remain the same */
+    background:linear-gradient(180deg,var(--bg),#FFFFFF);
+    margin:0;
+    padding:20px;
+    color:#263238;
+}
+/* ------------------------------- */
+
+:root{
+   --bg:#E0F7FA; /* ฟ้าอมเขียวอ่อน สดชื่น */
+   --card:#FFFFFF;
+   --accent:#26A69A; /* teal สดใส */
+   --accent-light:#B2DFDB;
+   --muted:#546E7A;
+   --highlight:#80CBC4;
+   font-family: 'Kanit', sans-serif;
+
+   /* New Color Variables for Plan Alternation */
+   --plan-bg-1: #F0FFFF; /* Azure Light */
+   --plan-bg-2: #FFF3E0; /* Orange Light */
+   --plan-bg-3: #E0F2F1; /* Teal Lightest */
+   --plan-border-1: #00BCD4;
+   --plan-border-2: #FF9800;
+   --plan-border-3: #00BFA5;
+}
+body::before{
+   content: "";
+   position: fixed;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   background: url('logo1.gif') center center no-repeat;
+   background-size: 380px auto;
+   opacity: 0.06;
+   z-index: -1;
+}
+header{display:flex;align-items:center;gap:12px}
+h1{margin:0;font-size:20px;text-align:center;flex:1;color:var(--accent)}
+.container{max-width:980px;margin:20px auto}
+.card{background:var(--card);border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,0.08);padding:18px;margin-bottom:16px;border-top:4px solid var(--highlight)}
+label{display:block;font-size:14px;margin-bottom:6px;color:var(--muted)}
+input[type=number]{width:100%;padding:10px;border-radius:10px;border:1px solid #cfd8dc;font-size:16px;background:#FAFAFA;}
+.row{display:flex;gap:12px}
+.col{flex:1}
+.radio-row{display:flex;gap:10px;flex-wrap:wrap}
+.pill{padding:8px 14px;border-radius:20px;border:1px solid #B2DFDB;background:#E0F2F1;cursor:pointer;transition:all 0.2s ease}
+.pill:hover{background:var(--highlight);color:#004D40}
+button.primary{background:var(--accent);color:#fff;border:0;padding:12px 20px;border-radius:12px;font-weight:600;cursor:pointer;transition:all 0.2s ease}
+button.primary:hover{background:#00796B}
+.result{margin-top:12px}
+table{width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden}
+th,td{padding:8px;border-bottom:1px solid #E0F2F1;text-align:center}
+th{background:var(--accent-light);color:#004D40}
+/* Alternate row colors for tables only (Number Mode) */
+.plan-table tbody tr:nth-child(odd) {
+    background-color: #F8F8F8;
+}
+.plan-table.plan-1 tbody tr:nth-child(odd) {
+    background-color: var(--plan-bg-1);
+}
+.plan-table.plan-2 tbody tr:nth-child(odd) {
+    background-color: var(--plan-bg-2);
+}
+.plan-table.plan-3 tbody tr:nth-child(odd) {
+    background-color: var(--plan-bg-3);
+}
+
+
+.small{font-size:13px;color:var(--muted)}
+.note{background:#E0F2F1;padding:10px;border-radius:10px;margin-top:8px;white-space:pre-line;color:#004D40}
+footer{font-size:13px;color:var(--muted);text-align:center;padding:8px}
+@media(max-width:720px){.row{flex-direction:column}}
+
+/* --- Plan Containers for Color Alternation --- */
+.plan-section {
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.plan-section.plan-1 {
+    background-color: var(--plan-bg-1);
+    border-left: 5px solid var(--plan-border-1);
+}
+.plan-section.plan-2 {
+    background-color: var(--plan-bg-2);
+    border-left: 5px solid var(--plan-border-2);
+}
+.plan-section.plan-3 {
+    background-color: var(--plan-bg-3);
+    border-left: 5px solid var(--plan-border-3);
+}
+
+/* --- Pill Image Mode Grid Layout --- */
+.plan-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto; 
+    padding-bottom: 8px;
+}
+.day-card {
+    min-width: 120px;
+    flex-grow: 1;
+    text-align: center;
+    padding: 10px 5px;
+    border-radius: 12px;
+    border: 1px solid #E0E0E0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background-color: #FFFFFF; /* Keep day cards white for contrast */
+}
+.day-name {
+    font-weight: 600;
+    padding: 2px 0;
+    margin-bottom: 4px;
+    border-radius: 8px;
+    color: #333;
+}
+.day-name.mon { background-color: #FFFDE7; border: 1px solid #FBC02D; color: #795548; }
+.day-name.tue { background-color: #F3E5F5; border: 1px solid #9C27B0; color: #4A148C; }
+.day-name.wed { background-color: #E8F5E9; border: 1px solid #4CAF50; color: #1B5E20; }
+.day-name.thu { background-color: #FFF3E0; border: 1px solid #FF9800; color: #E65100; }
+.day-name.fri { background-color: #E1F5FE; border: 1px solid #2196F3; color: #0D47A1; }
+.day-name.sat { background-color: #FCE4EC; border: 1px solid #E91E63; color: #880E4F; }
+.day-name.sun { background-color: #FFEBEE; border: 1px solid #F44336; color: #B71C1C; }
+
+.daily-mg {
+    font-size: 14px;
+    color: #4CAF50;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+.daily-dose-text {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+    margin-top: 4px;
+}
+
+/* --- Pill Image Styling --- */
+.pill-container {
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    padding: 4px 0;
+    min-height: 32px; 
+}
+.pill-icon-wrapper {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 1; 
+    --pill-size: 24px; 
+}
+.pill-icon {
+    width: var(--pill-size);
+    height: var(--pill-size);
+    border-radius: 50%;
+    display: inline-block;
+    cursor: default;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+.pill-icon-3mg {
+    background-color: #4FC3F7; /* Blue */
+}
+.pill-icon-2mg {
+    background-color: #FFB74D; /* Orange */
+}
+.half-pill {
+    width: var(--pill-size);
+    height: var(--pill-size);
+    border-radius: 50%;
+    /* Clip to the LEFT half */
+    clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); 
+}
+
+/* Auto-shrink pills when there are 5 or more pills */
+.pill-container.shrink-pills .pill-icon-wrapper {
+    --pill-size: 18px; 
+    gap: 2px;
+}
+.pill-container.shrink-pills .pill-icon-wrapper .tooltip-text {
+    font-size: 10px; 
+}
+
+
+.pill-icon-wrapper .tooltip-text {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 8px;
+    position: absolute;
+    z-index: 10; 
+    bottom: 125%; 
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-size: 12px;
+}
+.pill-icon-wrapper:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+.pill-icon-wrapper .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.summary-pill {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.summary-line {
+    font-size: 14px;
+    margin-top: 5px;
+}
+</style>
 </head>
-<body>
-  <div class="app">
-    <h1>คำนวณขนาดยา Warfarin</h1>
-    <div class="form-section">
-      <label>ค่า INR ล่าสุด: <input type="number" id="inr" step="0.1" /></label>
-      <label>ขนาดยาเดิม (mg/สัปดาห์): <input type="number" id="weeklyDose" /></label>
-      <label><input type="checkbox" id="hasBleeding" /> มีเลือดออก</label>
-      <label>โหมด:
-        <select id="mode">
-          <option value="auto">ระบบคำนวณอัตโนมัติ</option>
-          <option value="manual">เลือก % ปรับยาเอง</option>
-        </select>
-      </label>
-      <div id="percentSection" style="display:none;">
-        <label>เลือก % การเปลี่ยนยา:
-          <select id="manualPercent">
-            <option value="-20">-20%</option>
-            <option value="-10">-10%</option>
-            <option value="0" selected>ไม่เปลี่ยน</option>
-            <option value="10">+10%</option>
-            <option value="20">+20%</option>
-          </select>
-        </label>
+<body oncontextmenu="return false;">
+<div class="container">
+<header class="card" style="align-items:center">
+<h1>เครื่องคำนวณการให้ยา Warfarin โรงพยาบาลพุนพิน</h1>
+</header>
+<section class="card">
+<form id="form">
+   <div class="row">
+      <div class="col">
+         <label>INR ปัจจุบัน</label>
+         <input type="number" step="0.01" id="inr" min="0" value="2.5" required>
       </div>
-      <label>วันเริ่มต้นสัปดาห์:
-        <select id="startDay">
-          <option value="0">วันอาทิตย์</option>
-          <option value="1" selected>วันจันทร์</option>
-          <option value="2">วันอังคาร</option>
-          <option value="3">วันพุธ</option>
-          <option value="4">วันพฤหัสบดี</option>
-          <option value="5">วันศุกร์</option>
-          <option value="6">วันเสาร์</option>
-        </select>
-      </label>
-      <button onclick="calculateDose()">คำนวณขนาดยา</button>
+      <div class="col">
+         <label>ขนาดยา Warfarin ต่อสัปดาห์ (mg)</label>
+         <input type="number" step="0.1" id="weeklyDose" min="0" value="35" required>
+      </div>
+      <div class="col">
+         <label>จำนวนวันนัด (วัน)</label>
+         <input type="number" id="days" min="1" value="7" required>
+      </div>
+   </div>
+    <div style="margin-top:12px">
+      <label>ชนิดเม็ดยาที่ใช้</label>
+      <div class="radio-row">
+        <label class="pill"><input type="radio" name="pills" value="3" checked> ใช้เม็ด 3 mg เท่านั้น</label>
+        <label class="pill"><input type="radio" name="pills" value="2"> ใช้เม็ด 2 mg เท่านั้น</label>
+        <label class="pill"><input type="radio" name="pills" value="both"> ใช้ทั้ง 2 และ 3 mg</label>
+      </div>
     </div>
-    <div class="result-section" id="result"></div>
-  </div>
-  <script src="pill-render.js"></script>
-  <script src="script.js"></script>
-  <script>
-    document.getElementById("mode").addEventListener("change", function() {
-      document.getElementById("percentSection").style.display =
-        this.value === "manual" ? "block" : "none";
-    });
-  </script>
+    <div style="margin-top:12px" class="row">
+        <div class="col">
+            <label>ภาวะเลือดออก</label>
+            <div class="radio-row">
+                <label class="pill"><input type="radio" name="bleed" value="no" checked> ไม่มี</label>
+                <label class="pill"><input type="radio" name="bleed" value="yes"> มี</label>
+            </div>
+        </div>
+        <div class="col">
+            <label>โหมดแสดงผล</label>
+            <div class="radio-row">
+                <label class="pill"><input type="radio" name="displayMode" value="number" checked> แสดงเป็นตัวเลข</label>
+                <label class="pill"><input type="radio" name="displayMode" value="image"> แสดงเป็นรูปเม็ดยา</label>
+            </div>
+        </div>
+    </div>
+</form>
+<div id="results" class="result" style="display:none"></div>
+</section>
+<section id="tables" class="card" style="display:none">
+<h3 style="color:var(--accent)">ตารางแผนการให้ยา (7 วัน)</h3>
+<div id="plans"></div>
+<div style="margin-top:12px;text-align:right">
+   <button onclick="window.print()" class="primary">ดาวน์โหลด / พิมพ์ (PDF)</button>
+</div>
+</section>
+<footer class="card small">คำเตือน: เครื่องมือนี้เป็นเครื่องมือช่วยคำนวณเท่านั้น ไม่ใช่คำสั่งการรักษา เเพทย์/เภสัชกรเป็นผู้ตัดสินใจขั้นสุดท้าย</footer>
+</div>
+<script>
+// --- START: COPY PROTECTION CODE ---
+document.onkeydown = function(e) {
+    // Disable F12 (Developer Tools) and other keys
+    if (e.keyCode == 123 || 
+        (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || // Ctrl+Shift+I
+        (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || // Ctrl+Shift+J
+        (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) ) { // Ctrl+U (View Source)
+        return false;
+    }
+};
+// Disabled right-click via HTML attribute oncontextmenu="return false;" in <body>
+// Disabled text selection via CSS user-select: none; in <body>
+// --- END: COPY PROTECTION CODE ---
+
+function roundHalf(x){return Math.round(x*2)/2}
+function distributeEvenly7(total){
+   const base = Math.floor(total/7);
+   let arr = Array(7).fill(base);
+   let rem = total - base*7;
+   // Distribute remainder one by one
+   for(let i=0;i<rem;i++) arr[i]++;
+   return arr;
+}
+function findBestCombo(target){
+    const numSets = Math.round(target / 5);
+    const h3 = numSets;
+    const h2 = numSets;
+    const total = h3*3 + h2*2;
+    return {h3:h3, h2:h2, total:total};
+}
+
+/**
+ * Generates HTML for pill images (full or half).
+ * @param {number} count - The number of pills (e.g., 1, 1.5, 0.5).
+ * @param {number} pillMg - The dosage of the pill (3 or 2).
+ * @returns {string} HTML string of pill icons.
+ */
+function generatePillImage(count, pillMg){
+    let html = '';
+    const fullPills = Math.floor(count);
+    const hasHalf = count % 1 !== 0;
+
+    const pillClass = pillMg === 3 ? 'pill-icon-3mg' : 'pill-icon-2mg';
+    const pillText = `${pillMg} mg`;
+
+    // Full Pills
+    for(let i=0; i<fullPills; i++){
+        html += `<div class="pill-icon-wrapper">
+                    <span class="pill-icon ${pillClass}"></span>
+                    <span class="tooltip-text">${pillText} (เต็มเม็ด)</span>
+                </div>`;
+    }
+
+    // Half Pill 
+    if(hasHalf){
+        html += `<div class="pill-icon-wrapper">
+                    <span class="pill-icon half-pill ${pillClass}"></span>
+                    <span class="tooltip-text">${pillText} (ครึ่งเม็ด)</span>
+                </div>`;
+    }
+    return html; 
+}
+
+/**
+ * Builds the daily plan display either as a grid of cards (image mode) or a table (number mode).
+ */
+function buildPlanHTML(title, combo, weeklyDose, displayMode, total3PillCount, total2PillCount, planIndex){
+    const perDay3 = distributeEvenly7(combo.h3);
+    const perDay2 = distributeEvenly7(combo.h2);
+    const totalWeekly = combo.total;
+    const diffWeekPct = weeklyDose===0?0:((totalWeekly-weeklyDose)/weeklyDose)*100;
+    const pctText = `${diffWeekPct>0?'+':''}${diffWeekPct.toFixed(2)}%`;
+
+    // Day names starting from Monday (จ. - อา.)
+    const dayNames = ['จ.','อ.','พ.','พฤ.','ศ.','ส.','อา.'];
+    const dayClasses = ['mon','tue','wed','thu','fri','sat','sun']; 
+    
+    let html = `<div class="plan-section plan-${planIndex}">`;
+    html += `<h4>ตัวเลือก: ${title} — รวม ${totalWeekly.toFixed(2)} mg/สัปดาห์ (${pctText} จากเดิม)</h4>`;
+
+    if (displayMode === 'image') {
+        html += `<div class="plan-grid">`;
+        
+        for(let i=0;i<7;i++){
+            let t3 = perDay3[i];
+            let t2 = perDay2[i];
+            
+            // Adjust for original logic which uses h3/2 or h2/2 for single-pill modes (1.5mg and 1.0mg total)
+            if (combo.type === '3mg') { 
+                t3 = t3 / 2;
+                t2 = 0;
+            } else if (combo.type === '2mg') { 
+                t2 = t2 / 2;
+                t3 = 0;
+            }
+
+            const mg = t3*3 + t2*2;
+            
+            const t3Html = generatePillImage(t3, 3);
+            const t2Html = generatePillImage(t2, 2);
+            
+            // Calculate total pill units for shrinking logic
+            const totalPillUnits = Math.ceil(t3) + Math.ceil(t2);
+            const shrinkClass = totalPillUnits >= 5 ? 'shrink-pills' : ''; // Apply shrink class if 5 or more pills
+
+            let doseText = '';
+            if (t3 > 0) doseText += `3 mg x ${t3.toFixed(1).replace('.0','')}\n`;
+            if (t2 > 0) doseText += `2 mg x ${t2.toFixed(1).replace('.0','')}`;
+
+            html += `
+                <div class="day-card">
+                    <div class="day-name ${dayClasses[i]}">${dayNames[i]}</div>
+                    <div class="daily-mg">(${mg.toFixed(1)} mg)</div>
+                    <div class="pill-container ${shrinkClass}">${t2Html}${t3Html}</div>
+                    <div class="daily-dose-text" style="white-space:pre-line">${doseText.trim()}</div>
+                </div>
+            `;
+        }
+        
+        html += `</div>`;
+        
+        // Add Summary Pills
+        html += `<h4>รวมยาสำหรับ ${document.getElementById('days').value} วันนัด:</h4>`;
+        html += `<div class="summary">`;
+        if(total3PillCount > 0) {
+            html += `<div class="summary-line"><span class="summary-pill pill-icon-3mg"></span> 3 mg: ${total3PillCount} เม็ด</div>`;
+        }
+        if(total2PillCount > 0) {
+            html += `<div class="summary-line"><span class="summary-pill pill-icon-2mg"></span> 2 mg: ${total2PillCount} เม็ด</div>`;
+        }
+        html += `</div>`;
+
+
+    } else {
+        // --- Number Mode (Original Table) ---
+        html += `<table class="plan-table plan-${planIndex}"><thead><tr><th>วัน</th><th>3 mg (เม็ด)</th><th>2 mg (เม็ด)</th><th>รวม (mg)</th></tr></thead><tbody>`;
+        
+        for(let i=0;i<7;i++){
+            let t3 = perDay3[i];
+            let t2 = perDay2[i];
+            
+            if (combo.type === '3mg') { 
+                t3 = t3 / 2;
+                t2 = 0;
+            } else if (combo.type === '2mg') { 
+                t2 = t2 / 2;
+                t3 = 0;
+            }
+            const mg = t3*3 + t2*2;
+            
+            html += `<tr>
+                        <td>${dayNames[i]}</td>
+                        <td>${t3 % 1 === 0 ? t3 : t3.toFixed(1)}</td>
+                        <td>${t2 % 1 === 0 ? t2 : t2.toFixed(1)}</td>
+                        <td>${mg.toFixed(2)}</td>
+                    </tr>`;
+        }
+        html += `</tbody></table>`;
+        
+        // Add Summary Note for Number Mode
+        let noteText = `สรุปจำนวนเม็ดยา (${document.getElementById('days').value} วันนัด)\n`;
+        if(total3PillCount > 0) noteText += `รวม 3 mg: ${total3PillCount} เม็ด\n`;
+        if(total2PillCount > 0) noteText += `รวม 2 mg: ${total2PillCount} เม็ด`;
+        if(noteText.trim()) html += `<div class="note" style="white-space:pre-line">${noteText}</div>`;
+    }
+
+    html += `</div>`;
+    return html;
+}
+
+function calculate(){
+   const inr = parseFloat(document.getElementById('inr').value);
+   const weeklyDose = parseFloat(document.getElementById('weeklyDose').value);
+   const pillChoice = document.querySelector('input[name="pills"]:checked').value;
+   const bleed = document.querySelector('input[name="bleed"]:checked').value;
+   const displayMode = document.querySelector('input[name="displayMode"]:checked').value; 
+
+   if(isNaN(inr)||isNaN(weeklyDose)) return;
+    const resDiv = document.getElementById('results');
+   const tables = document.getElementById('tables');
+   const plansDiv = document.getElementById('plans');
+
+   if(bleed==='yes'){
+     resDiv.innerHTML = `<div class="card"><p><strong>คำแนะนำ:</strong> พบภาวะเลือดออก: ให้ Vit K1 และพิจารณาการรักษาเฉียบพลันตามข้อแนะนำทางการแพทย์</p></div>`;
+     resDiv.style.display='block';
+     tables.style.display='none';
+     plansDiv.innerHTML='';
+     return;
+   }
+    let adj = {minPct:0,maxPct:0,avgPct:0,note:''};
+   if(inr < 1.5){adj.minPct=0.10;adj.maxPct=0.20;adj.avgPct=0.15;adj.note='เพิ่มขนาดยารายสัปดาห์ 10–20%';}
+   else if(inr>=1.5 && inr<=1.9){adj.minPct=0.05;adj.maxPct=0.10;adj.avgPct=0.075;adj.note='เพิ่ม 5–10% หรือพิจารณาไม่ปรับ แต่ติดตาม INR บ่อยขึ้น';}
+   else if(inr>=2.0 && inr<=3.0){adj.minPct=0;adj.maxPct=0;adj.avgPct=0;adj.note='ไม่ต้องปรับยา';}
+   else if(inr>=3.1 && inr<=3.9){adj.minPct=-0.10;adj.maxPct=-0.05;adj.avgPct=-0.075;adj.note='ลดขนาดยารายสัปดาห์ 5–10%';}
+   else if(inr>3.9 && inr<5.0){adj.minPct=-0.10;adj.maxPct=-0.10;adj.avgPct=-0.10;adj.note='หยุดยา 1 วัน แล้วกลับมาเริ่มด้วยขนาดที่ลดลง 10%';}
+   else if(inr>=5.0 && inr<9.0){adj.minPct=-0.20;adj.maxPct=-0.20;adj.avgPct=-0.20;adj.note='หยุดยา 2 วัน แล้วกลับมาเริ่มด้วยขนาดที่ลดลง 20% — พิจารณาให้ Vitamin K₁';}
+   else if(inr>=9.0){adj.minPct=null;adj.maxPct=null;adj.avgPct=null;adj.note='INR > 9.0: หยุดยา ให้ Vitamin K₁ 2.5–5 mg รับประทาน และติดตาม INR อย่างใกล้ชิด';}
+    let newRange = {};
+   if(adj.minPct===null){
+      newRange.note = 'ไม่แนะนำให้คำนวณขนาดยาอัตโนมัติสำหรับ INR >= 9.0 — ให้ผู้เชี่ยวชาญประเมิน';
+    } else{
+      const min = weeklyDose*(1+adj.minPct);
+      const max = weeklyDose*(1+adj.maxPct);
+      const avg = weeklyDose*(1+adj.avgPct);
+      newRange = {
+        minCalc: parseFloat(min.toFixed(2)),
+        maxCalc: parseFloat(max.toFixed(2)),
+        avgCalc: parseFloat(avg.toFixed(2)),
+        min: roundHalf(min),
+        max: roundHalf(max),
+        avg: roundHalf(avg)
+      };
+    }
+    let html = `<div class="card"><p><strong>คำแนะนำ:</strong> INR = ${inr.toFixed(2)} — ${adj.note}</p>`;
+   if(newRange.note) html += `<p class="note">${newRange.note}</p>`;
+    else html += `<p>ขนาดยาใหม่ต่อสัปดาห์ (mg) : <strong>${newRange.minCalc.toFixed(2)} — ${newRange.maxCalc.toFixed(2)}</strong> (เฉลี่ย ${newRange.avgCalc.toFixed(2)} mg)</p>`;
+   html += `</div>`;
+   resDiv.innerHTML = html;
+    resDiv.style.display='block';
+    plansDiv.innerHTML='';
+    if(newRange.min!==undefined){
+      const targets = [
+         {k:'ต่ำสุด', val:newRange.min, pct:adj.minPct},
+         {k:'เฉลี่ย', val:newRange.avg, pct:adj.avgPct},
+         {k:'สูงสุด', val:newRange.max, pct:adj.maxPct}
+      ];
+       const numDays = parseInt(document.getElementById('days').value);
+       
+       targets.forEach((t, index)=>{
+        let best;
+        if(pillChoice==='3'){
+          const h3=Math.round(t.val/1.5); 
+          best={h3:h3,h2:0,total:h3*1.5,type:'3mg'}; 
+        } else if(pillChoice==='2'){
+          const h2=Math.round(t.val/1.0); 
+          best={h3:0,h2:h2,total:h2*1.0,type:'2mg'}; 
+        } else {
+          best=findBestCombo(t.val);
+          best.type='5mg';
+        }
+        
+         // 🔧 สรุปจำนวนเม็ดยาจากการกระจายจริงในจำนวนวันนัด
+        let total3 = 0, total2 = 0;
+        const perDay3 = distributeEvenly7(best.h3);
+        const perDay2 = distributeEvenly7(best.h2);
+         for(let i=0; i<numDays; i++){
+             if(best.type==='3mg'){
+                 total3 += perDay3[i % 7]/2;
+             } else if(best.type==='2mg'){
+                 total2 += perDay2[i % 7]/2;
+             } else if(best.type==='5mg'){
+                 total3 += perDay3[i % 7];
+                 total2 += perDay2[i % 7];
+             }
+        }
+        
+         total3 = Math.ceil(total3);
+         total2 = Math.ceil(total2);
+
+        // Pass (index + 1) to determine the color class
+        let planHTML = buildPlanHTML(t.k, best, weeklyDose, displayMode, total3, total2, index + 1);
+        
+         plansDiv.innerHTML += planHTML;
+      });
+      tables.style.display='block';
+   } else {
+      plansDiv.innerHTML=`<div class="note">${newRange.note}</div>`;
+      tables.style.display='block';
+   }
+}
+
+document.querySelectorAll('input[name="displayMode"]').forEach(el=>el.addEventListener('change',calculate));
+document.querySelectorAll('input[name="pills"]').forEach(el=>el.addEventListener('change',calculate));
+document.querySelectorAll('input[name="bleed"]').forEach(el=>el.addEventListener('change',calculate));
+document.getElementById('inr').addEventListener('input',calculate);
+document.getElementById('weeklyDose').addEventListener('input',calculate);
+document.getElementById('days').addEventListener('input',calculate);
+
+calculate();
+</script>
 </body>
 </html>
